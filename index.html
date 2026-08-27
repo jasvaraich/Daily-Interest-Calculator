@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Daily Interest Calculator</title>
+<style>
+  :root {
+    --bg: #000000;
+    --surface: #111111;
+    --surface-2: #1c1c1e;
+    --border: #2a2a2c;
+    --text-primary: #f5f5f7;
+    --text-secondary: #a1a1a6;
+    --accent: #0071e3;
+  }
+
+  * {
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--bg);
+    color: var(--text-primary);
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text",
+                 "Helvetica Neue", Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap {
+    max-width: 480px;
+    margin: 0 auto;
+    padding: 48px 20px 64px;
+    min-height: 100vh;
+  }
+
+  .header {
+    text-align: center;
+    margin-bottom: 40px;
+  }
+
+  .header h1 {
+    font-size: 28px;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    margin: 0 0 8px;
+  }
+
+  .header p {
+    font-size: 15px;
+    color: var(--text-secondary);
+    margin: 0;
+    line-height: 1.5;
+  }
+
+  .amount-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    padding: 20px;
+    margin-bottom: 16px;
+  }
+
+  .amount-label {
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  .amount-input-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .currency-prefix {
+    font-size: 24px;
+    font-weight: 500;
+    color: var(--text-secondary);
+  }
+
+  #amt {
+    flex: 1;
+    background: transparent;
+    border: none;
+    outline: none;
+    color: var(--text-primary);
+    font-size: 28px;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    font-family: inherit;
+    width: 100%;
+    -moz-appearance: textfield;
+  }
+
+  #amt::-webkit-outer-spin-button,
+  #amt::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+
+  .rows {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .rate-row {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 16px 18px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    transition: border-color 0.2s ease;
+  }
+
+  .rate-row:focus-within {
+    border-color: var(--accent);
+  }
+
+  .rate-input-group {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .rate-input-group input {
+    width: 56px;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text-primary);
+    font-size: 16px;
+    font-weight: 500;
+    text-align: center;
+    padding: 8px 4px;
+    outline: none;
+    font-family: inherit;
+    -moz-appearance: textfield;
+  }
+
+  .rate-input-group input::-webkit-outer-spin-button,
+  .rate-input-group input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+
+  .rate-input-group input:focus {
+    border-color: var(--accent);
+  }
+
+  .rate-suffix {
+    font-size: 13px;
+    color: var(--text-secondary);
+  }
+
+  .result {
+    font-size: 18px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    text-align: right;
+    white-space: nowrap;
+  }
+
+  .footnote {
+    text-align: center;
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin-top: 28px;
+    line-height: 1.6;
+  }
+
+  @media (max-width: 360px) {
+    .header h1 { font-size: 24px; }
+    .result { font-size: 16px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <div class="header">
+    <h1>Daily interest</h1>
+    <p>See what a purchase amount earns in one day at different rates.</p>
+  </div>
+
+  <div class="amount-card">
+    <div class="amount-label">Amount</div>
+    <div class="amount-input-row">
+      <span class="currency-prefix">$</span>
+      <input type="number" id="amt" value="1000" min="0" step="1" inputmode="decimal" />
+      <span class="currency-prefix" style="font-size:15px;">CAD</span>
+    </div>
+  </div>
+
+  <div class="rows" id="rows"></div>
+
+  <p class="footnote">1-day interest = amount &times; annual rate &divide; 365</p>
+</div>
+
+<script>
+  const defaultRates = [5, 8, 12, 18, 24];
+  const rows = document.getElementById('rows');
+  const amtInput = document.getElementById('amt');
+
+  defaultRates.forEach((r, i) => {
+    const row = document.createElement('div');
+    row.className = 'rate-row';
+    row.innerHTML = `
+      <div class="rate-input-group">
+        <input type="number" class="rate" data-idx="${i}" value="${r}" min="0" step="0.1" inputmode="decimal" />
+        <span class="rate-suffix">% APR</span>
+      </div>
+      <span class="result" data-idx="${i}">--</span>
+    `;
+    rows.appendChild(row);
+  });
+
+  function fmt(n) {
+    return new Intl.NumberFormat('en-CA', {
+      style: 'currency',
+      currency: 'CAD',
+      maximumFractionDigits: 2
+    }).format(n);
+  }
+
+  function recalc() {
+    const amt = parseFloat(amtInput.value) || 0;
+    document.querySelectorAll('.rate').forEach(inp => {
+      const rate = parseFloat(inp.value) || 0;
+      const daily = amt * (rate / 100) / 365;
+      document.querySelector('.result[data-idx="' + inp.dataset.idx + '"]').textContent = fmt(daily);
+    });
+  }
+
+  amtInput.addEventListener('input', recalc);
+  document.querySelectorAll('.rate').forEach(inp => inp.addEventListener('input', recalc));
+  recalc();
+</script>
+
+</body>
+</html>
